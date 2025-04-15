@@ -21,13 +21,14 @@ BEGIN
     SELECT
         ROUND(AVG(miesieczna_podstawa), 2)
       INTO wynik
+	  
     FROM(
         SELECT
             ( SUM (
                 CASE 
                     WHEN s.proporcjonalny_do_przepracowanych_dni = true
 						 -- Przeliczenie na hipoteczne wartosci dla danego miesiaca 
-                        THEN sw.kwota * (30.0 / (30.0 - COALESCE(n.dni_nieobecne, 0)))
+                        THEN sw.kwota * ((30.0 - COALESCE(n.dni_nieobecne, 0)) / 30)
                     ELSE sw.kwota /* jesli s.proporcjonalny_do_przepracowanych_dni = false, wtedy zostawiamy niezmieniona wartosc sw.kwota */
                 END
 			 -- wyliczenie kowoty brutto 
@@ -59,10 +60,10 @@ BEGIN
               AND nieobecnosci.data_poczatkowa <= m.koniec_mies
         ) n ON TRUE
 
-        WHERE w.id_pracownika = p_id_pracownika
-          AND s.wliczac_do_podstawy_chorobowego = true
-          AND w.miesiac BETWEEN pierwszy_miesiac AND ostatni_miesiac
-        GROUP BY w.miesiac
+      WHERE w.id_pracownika = p_id_pracownika
+         AND s.wliczac_do_podstawy_chorobowego = true
+         AND w.miesiac BETWEEN pierwszy_miesiac AND ostatni_miesiac
+       GROUP BY w.miesiac
     ) podsumowanie;
 
     RETURN wynik;
