@@ -8,7 +8,7 @@ DECLARE
     p_id_pracownika INTEGER;
     pierwszy_miesiac TEXT;
     ostatni_miesiac TEXT;
-    wynik NUMERIC;
+    wynik NUMERIC ;
 BEGIN
 			-- obliczamy pierwszy miesiac tzn. od podanego miesiaca (jako parametr funkcji) odejmujemy 12 miesiecy
 			pierwszy_miesiac := to_char(date_trunc('month', p_data_rozpoczecia) - interval '12 month', 'YYYY-MM'); 
@@ -41,7 +41,7 @@ BEGIN
         JOIN skladniki AS s
           ON sw.id_skladnika = s.id
 
-		-- dodajemy kolumny z data pierwszego i ostatniego dnia miesiaca
+		-- dodajemy kolumny z data pierwszego i ostatniego dnia miesiaca.
         JOIN LATERAL(
             SELECT 
                 to_date(w.miesiac || '-01', 'YYYY-MM-DD') AS poczatek_mies,
@@ -49,17 +49,17 @@ BEGIN
         ) AS m ON true
 
 		-- korzystamy z lateral zeby dynamicznie wyliczac daty nieobecnosci dla kazdego miesiaca.
-        LEFT JOIN LATERAL (
+        LEFT JOIN LATERAL(
          SELECT
 		 	-- uzywamy sum na wypadek gdyby było pare okresow nieobecnosci w danym miesiacu.
-		 	-- dzieki temu poprawnie rodzielimy okresy nieobecności między miesiące, jesli mamy np nieobecnosc 2022-04-28 do 2022-05-18
+		 	-- dzieki temu poprawnie rodzielimy okresy nieobecności między miesiące, jesli mamy np nieobecnosc 2022-04-28 do 2022-05-18.
 			SUM (GREATEST (0,
 			   LEAST(m.koniec_mies, nieobecnosci.data_koncowa) - GREATEST(m.poczatek_mies, nieobecnosci.data_poczatkowa) + 1
 			))
 			 AS dni_nieobecne
 			-- dodajemy 1 poniewaz np. 07.02.2025 - 05.02.2025 = 2 a tak naprawde to sa 3 dni wolnego.
             FROM nieobecnosci
-            WHERE nieobecnosci.id_pracownika = w.id_pracownika
+             WHERE nieobecnosci.id_pracownika = w.id_pracownika
               AND nieobecnosci.rodzaj_nieobecnosci = 'chorobowe'
 			  -- warunek, dzieki ktoremu rozpatryjemy nieobecnosci w danym miesiacu  
               AND nieobecnosci.data_koncowa >= m.poczatek_mies
@@ -70,7 +70,7 @@ BEGIN
           AND s.wliczac_do_podstawy_chorobowego = true
           AND w.miesiac BETWEEN pierwszy_miesiac AND ostatni_miesiac
 		  -- sprawdzamy czy liczba nieobecnosci jest mniejsza od 15
-		  AND COALESCE(n.dni_nieobecne, 0) <= 15
+		  AND COALESCE (n.dni_nieobecne, 0) <= 15
         GROUP BY w.miesiac
     ) podsumowanie;
 
@@ -80,5 +80,5 @@ $$ LANGUAGE plpgsql;
 
 
 --wywolanie funkcji
-SELECT podstawa_wynagrodzenia_chorobowego_3('Zofia', 'Radomska', '2022-08-05') AS podstawa;
+SELECT podstawa_wynagrodzenia_chorobowego_3('Zofia', 'Radomska', '2022-08-05') AS podstawa ;
 
